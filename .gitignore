@@ -1,5 +1,3 @@
-# Virtual Environments
-pyvenv.cfg
-bin/
-include/
-lib/
+# Jupyter
+.ipynb_checkpoints
+share
