@@ -12,10 +12,11 @@ def dbscan(df, min, e):
 
     # numpy array to hold the labels representing noise, border, and core points (all integers). Size of df.
     labels = np.zeros(df.shape[0], dtype=int)
+
     # function to get euclidean distance between points.
-    def distance(x, y):
-        d = math.dist(x, y)
-        return d
+    # def distance(x, y):
+    #     d = math.dist(x, y)
+    #     return d
 
     def threshold(df, P, e):
         neighbors = []
