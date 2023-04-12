@@ -14,17 +14,17 @@ def dbscan(D, eps, MinPts):
         if labels[P] != 0:
             continue
 
-        neighbors = region_query(D, P, eps)
+        neighbors = threshold(D, P, eps)
 
-        if len(neighbors) < MinPts: # if its clusters size is smaller tha min, points are noise
+        if len(neighbors) < MinPts: # if its clusters size is smaller than min, points are noise
             labels[P] = -1
         else:
-            C += 1 # grow new cluster from this point is enough neighbors
-            grow_cluster(D, labels, P, neighbors, C, eps, MinPts)
+            C += 1 # grow new cluster from this point if enough neighbors
+            growCluster(D, labels, P, neighbors, C, eps, MinPts)
     return labels # list indicating cluster membership
 
 # searches through data matrix to find all points that belong to new cluster
-def grow_cluster(D, labels, P, NeighborPts, C, eps, MinPts):
+def growCluster(D, labels, P, NeighborPts, C, eps, MinPts):
     labels[P] = C
     i = 0
     while i < len(NeighborPts):
@@ -33,13 +33,13 @@ def grow_cluster(D, labels, P, NeighborPts, C, eps, MinPts):
             pass # neighbor is noise - ignore
         elif labels[Pn] == 0: # if unvisited
             labels[Pn] = C # add to cluster
-            PnNeighborPts = region_query(D, Pn, eps) # check neighbors
+            PnNeighborPts = threshold(D, Pn, eps) # check neighbors
             if len(PnNeighborPts) >= MinPts: # if it has enough neighbors to be a cluster, add to labels list
                 NeighborPts += PnNeighborPts
         i += 1 # goto next neighbor
 
 # gets neighbors within epsilon distance of point
-def region_query(D, P, eps):
+def threshold(D, P, eps):
     neighbors = []
     for neighborPoint in range(0, len(D)):
         if neighborPoint == P:
