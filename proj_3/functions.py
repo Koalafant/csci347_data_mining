@@ -1,54 +1,54 @@
 import pandas as pd
 import numpy as np
-import sklearn as sk
-import math
-import matplotlib.pyplot as plt
 
-city_data = pd.read_csv('tetuan_city_power_consumption.csv')
+city_data = pd.read_csv('tetuan_city_power_consumption.csv', skiprows=1, encoding='latin1', usecols=range(1, 8))
+subset_size = 2000  # adjust this to your desired subset size (ideal = 3000-4000)
+subset_indices = np.random.choice(city_data.index, subset_size, replace=False)
+subset = city_data.loc[subset_indices]
 
-# e (epsilon): the radius of a neighborhood centered on a given point
-# min: minpts - required number of points
-def dbscan(df, min, e):
+def dbscan(D, eps, MinPts):
 
-    # numpy array to hold the labels representing noise, border, and core points (all integers). Size of df.
-    labels = np.zeros(df.shape[0], dtype=int)
-
-    # function to get euclidean distance between points.
-    # def distance(x, y):
-    #     d = math.dist(x, y)
-    #     return d
-
-    def threshold(df, P, e):
-        neighbors = []
-        for point in range(df.shape[0]):
-            if np.linalg.norm(df[P] - df[point]) < e:
-                neighbors.append(point)
-        return neighbors
-
-    def new_cluster(df, label, P, neighbors, numClusters, e, min):
-        label[P] = numClusters
-        S = set(neighbors)
-        while S:
-            Pn = S.pop()
-            if labels[Pn] == -1:
-                labels[Pn] = numClusters
-            elif labels[Pn] == 0:
-                labels[Pn] = numClusters
-            PnNeighbors = threshold(df, Pn, e)
-            if len(PnNeighbors) >= min:
-                S.update(set(PnNeighbors))
-
-    # C = current cluster
-    numClusters = 0
-    # P will be index of the data point.
-    for P in range(df.shape[0]):
-        # Only pick unclaimed points
-        if not (labels[P] == 0):
+    labels = [0] * len(D)
+    C = 0 # id of cluster
+    for P in range(0, len(D)):
+        if labels[P] != 0:
             continue
-        # neighbors = indexes of all neighboring points
-        neighbors = threshold(df, P, e)
-        if len(neighbors) < min:
+
+        neighbors = region_query(D, P, eps)
+
+        if len(neighbors) < MinPts: # if its clusters size is smaller tha min, points are noise
             labels[P] = -1
         else:
-            numClusters += 1
+            C += 1 # grow new cluster from this point is enough neighbors
+            grow_cluster(D, labels, P, neighbors, C, eps, MinPts)
+    return labels # list indicating cluster membership
 
+# searches through data matrix to find all points that belong to new cluster
+def grow_cluster(D, labels, P, NeighborPts, C, eps, MinPts):
+    labels[P] = C
+    i = 0
+    while i < len(NeighborPts):
+        Pn = NeighborPts[i]
+        if labels[Pn] == -1:
+            pass # neighbor is noise - ignore
+        elif labels[Pn] == 0: # if unvisited
+            labels[Pn] = C # add to cluster
+            PnNeighborPts = region_query(D, Pn, eps) # check neighbors
+            if len(PnNeighborPts) >= MinPts: # if it has enough neighbors to be a cluster, add to labels list
+                NeighborPts += PnNeighborPts
+        i += 1 # goto next neighbor
+
+# gets neighbors within epsilon distance of point
+def region_query(D, P, eps):
+    neighbors = []
+    for neighborPoint in range(0, len(D)):
+        if neighborPoint == P:
+            continue
+        distance = np.linalg.norm(D.iloc[P].values - D.iloc[neighborPoint].values)
+        # if euclidean distance between two points is smaller than epsilon, its a neighbor.
+        if distance < eps:
+            neighbors.append(neighborPoint)
+    return neighbors
+
+# NOTE: epsilon needs to be pretty big to get any clusters.
+print(dbscan(subset, 3, 5))
